@@ -39,7 +39,7 @@ d = 8;
 h = 20;
 // horizontal distance between the shaft and the end of the support
 A = 21;
-// total weigh
+// total width
 W = 2*A;
 // total height
 H = 32.8;
@@ -79,7 +79,7 @@ this_h = preset != 0 ? presets[preset][1] : h;
 // horizontal distance between the shaft and the end of the support
 this_A = preset != 0 ? presets[preset][2] : A;
 
-// total weigh
+// total width
 this_W = preset != 0 ? presets[preset][3] : 2*A;
 
 // total height
