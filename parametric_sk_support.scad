@@ -65,7 +65,7 @@ is_threaded_clamp = false;
 // clearance
 clearance = 0.1;
 //bolt counterbore shape
-bolt_counterbore_shape = "conical"; // [conical, hex, cylindrical]
+bolt_counterbore_shape = "cylindrical"; // [conical, hex, cylindrical]
 // distance between parallel faces of the nut
 F_nut = 4; 
 
@@ -122,43 +122,61 @@ module hexagon(r,h){
      
  }
 
+module counterbore(shape, translate_vector, rotate_vector, hole_diameter) {
+    head_heigth = 0.5*hole_diameter;
+    if( shape == "conical"){
+        translate(translate_vector)
+            rotate(rotate_vector)
+                cylinder(r1= 0.5*hole_diameter, r2 = 0.5*(hole_diameter + 2*head_heigth), h = head_heigth, center = true);
+    } else if( bolt_counterbore_shape == "cylindrical"){
+        translate(translate_vector)
+            rotate(rotate_vector)
+                cylinder(r = hole_diameter, h = head_heigth, center = true);
+    } else if( bolt_counterbore_shape == "hex"){
+        translate(translate_vector)
+            rotate(rotate_vector)
+                hexagon(0.75*hole_diameter,h);
+    }
+}
 difference(){
     // creating the flat T block
     union(){
-        translate([0,0,this_T/2]) cube([this_W,this_B,this_T], center = true);
-        translate([0,0,this_H/2 + this_T/2]) cube([this_E,this_B,this_H-this_T], center = true);
+        translate([0,0,this_T/2]) 
+            cube([this_W,this_B,this_T], center = true);
+        translate([0,0,this_H/2 + this_T/2]) 
+            cube([this_E,this_B,this_H-this_T], center = true);
     }
     
     // shaft hole
-    translate([0, 0, this_h]) rotate([90,0,0]) cylinder(r = this_d/2 + clearance, h = this_B, center = true);
+    translate([0, 0, this_h]) 
+        rotate([90,0,0]) 
+            cylinder(r = this_d/2 + clearance, h = this_B, center = true);
     
     // bolts 
-    translate([this_C/2,0,this_T/2]) cylinder(r = this_S/2 + clearance, h = this_T, center = true);
-    translate([-this_C/2,0,this_T/2]) cylinder(r = this_S/2 + clearance, h = this_T, center = true);
+    translate([this_C/2,0,this_T/2]) 
+        cylinder(r = this_S/2 + clearance, h = this_T, center = true);
+    translate([-this_C/2,0,this_T/2]) 
+        cylinder(r = this_S/2 + clearance, h = this_T, center = true);
     
     // gap for clamping
-    translate([0,0,this_H-(this_H-this_h-this_d/2)/2]) cube([gap,this_B,this_H-this_h-this_d/2], center = true);
+    translate([0,0,this_H-(this_H-this_h-this_d/2)/2]) 
+        cube([gap,this_B,this_H-this_h-this_d/2], center = true);
     
     // clamping bolt holes
-    translate([0, 0, this_H-(this_H-this_h-this_d/2)/2]) rotate([0, 90, 0]) cylinder(r = this_J/2 + clearance, h = this_E, center = true);
+    translate([0, 0, this_H-(this_H-this_h-this_d/2)/2]) 
+        rotate([0, 90, 0]) 
+            cylinder(r = this_J/2 + clearance, h = this_E, center = true);
     
     // locking and clamping bolt counterbore
-    if(bolt_counterbore_shape == "conical"){
-        translate([this_C/2,0,this_T]) cylinder(r1= 0.4*this_S,r2 = 0.8*this_S, h = 0.4*this_S, center = true);
-        translate([-this_C/2,0,this_T]) cylinder(r1= 0.4*this_S,r2 = 0.8*this_S, h = 0.4*this_S, center = true);
-        translate([-this_E/2 + 0.2*this_J, 0, this_H-(this_H-this_h-this_d/2)/2]) rotate([0,-90,0]) cylinder(r1= 0.4*this_J,r2 = 0.8*this_J, h = 0.4*this_J, center = true);
-    } else if( bolt_counterbore_shape == "cylindrical"){
-        translate([this_C/2,0,this_T - 0.75*this_J/2]) cylinder(r = this_J, h = 0.75*this_J, center = true);
-        translate([-this_C/2,0,this_T - 0.75*this_J/2]) cylinder(r = this_J, h = 0.75*this_J, center = true);
-        translate([-this_E/2 + 0.75*this_J/2, 0, this_H-(this_H-this_h-this_d/2)/2]) rotate([0,-90,0]) cylinder(r = this_J, h = 0.75*this_J, center = true);
-    } else {
-        
-    }
+    counterbore(bolt_counterbore_shape, [this_C/2,0,this_T], [0,0,0], this_S);
+    counterbore(bolt_counterbore_shape, [-this_C/2,0,this_T], [0,0,0], this_S);
+    counterbore(bolt_counterbore_shape, [-this_E/2 + 0.2*this_J, 0, this_H-(this_H-this_h-this_d/2)/2], [0,-90,0], this_J);
     
     // shaft countersink
-    translate([0,-this_B/2,this_h]) rotate([90,0,0]) cylinder(r1= 0.4*this_d,r2 = 0.8*this_d, h = 0.4*this_d, center = true);
-    translate([0,this_B/2,this_h]) rotate([270,0,0]) cylinder(r1= 0.4*this_d,r2 = 0.8*this_d, h = 0.4*this_d, center = true);
+    counterbore("conical", [0,-0.6*this_B ,this_h], [90,0,0], this_d);
+    counterbore("conical", [0,0.6*this_B,this_h], [270,0,0], this_d);
       
     // Nut housing
-    translate([this_E/2 - 0.75*this_J/2, 0, this_H-(this_H-this_h-this_d/2)/2]) rotate([0,-90,0]) hexagon(0.75*this_J,0.75*this_J);
+    counterbore("hex", [this_E/2 - 0.75*this_J/2, 0, this_H-(this_H-this_h-this_d/2)/2], [0,-90,0], this_J);
+    //translate([this_E/2 - 0.75*this_J/2, 0, this_H-(this_H-this_h-this_d/2)/2]) rotate([0,-90,0]) hexagon(0.75*this_J,0.75*this_J);
 }
